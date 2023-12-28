@@ -36,34 +36,29 @@ async fn answer(bot: Bot, msg: Message, cmd: Command) -> ResponseResult<()> {
         }
         Command::Token(token_name) => {
             let market: Market = Binance::new(None, None);
-            let mut iter = token_name.split_whitespace();
-            if let Some(crypto_symbol) = iter.next() {
-                let target = to_uppercase(&format!("{}", &crypto_symbol));
 
-                match market.get_price(target) {
-                    Ok(symbol_price) => {
-                        println!("{:#?}", &symbol_price);
-                        bot.send_message(
-                            msg.chat.id,
-                            format!("The price you want is {:#?}. ", &symbol_price.price),
-                        )
-                        .await?
-                    }
-                    Err(e) => {
-                        eprint!("{:#?}", e);
+            let default = "USDT";
 
-                        bot.send_message(
-                            msg.chat.id,
-                            format!(
-                            "Something went wrong. Did you use the correct cryptocurrency pair?"
+            let target = to_uppercase(&format!("{}{}", &token_name, &default));
+
+            match market.get_price(target) {
+                Ok(symbol_price) => {
+                    println!("{:#?}", &symbol_price);
+                    bot.send_message(
+                        msg.chat.id,
+                        format!(
+                            "Price of {} is {:#?} USDT ",
+                            &token_name, &symbol_price.price
                         ),
-                        )
-                        .await?
-                    }
+                    )
+                    .await?
                 }
-            } else {
-                bot.send_message(msg.chat.id, format!("Cryptocurrency symbols were not specified. To start with, you can use /price ETH or /price ETH USDT."))
-                .await?
+                Err(e) => {
+                    eprint!("{:#?}", e);
+
+                    bot.send_message(msg.chat.id, format!("Incorrect symbol"))
+                        .await?
+                }
             }
         }
     };
